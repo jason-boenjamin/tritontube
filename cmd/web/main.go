@@ -58,11 +58,22 @@ func main() {
 	var metadataService web.VideoMetadataService
 	fmt.Println("Creating metadata service of type", metadataServiceType, "with options", metadataServiceOptions)
 	// TODO: Implement metadata service creation logic
+	if metadataServiceType == "sqlite" {
+		svc, err := web.NewSQLiteVideoMetadataService(metadataServiceOptions)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		metadataService = svc
+	}
 
 	// Construct content service
 	var contentService web.VideoContentService
 	fmt.Println("Creating content service of type", contentServiceType, "with options", contentServiceOptions)
 	// TODO: Implement content service creation logic
+	if contentServiceType == "fs" {
+		contentService = web.NewFSVideoContentService(contentServiceOptions)
+	}
 
 	// Start the server
 	server := web.NewServer(metadataService, contentService)
