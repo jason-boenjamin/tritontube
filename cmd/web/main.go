@@ -3,7 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"google.golang.org/grpc"
 	"net"
+	"strings"
+	"tritontube/internal/proto"
 	"tritontube/internal/web"
 )
 
@@ -73,6 +76,17 @@ func main() {
 	// TODO: Implement content service creation logic
 	if contentServiceType == "fs" {
 		contentService = web.NewFSVideoContentService(contentServiceOptions)
+	} else if contentServiceType == "nw" {
+		svc, err := web.NewNetworkVideoContentService(contentServiceOptions)
+		if err != nil {
+			fmt.Println("Failed to initialize NetworkVideoContentService:", err)
+			return
+		}
+		contentService = svc
+	} else {
+		fmt.Println("Error: Unsupported content service type:", contentServiceType)
+		printUsage()
+		return
 	}
 
 	// Start the server
@@ -86,6 +100,26 @@ func main() {
 	defer lis.Close()
 
 	fmt.Println("Starting web server on", listenAddr)
+
+	if nwService, ok := contentService.(*web.NetworkVideoContentService); ok {
+		go func() {
+			adminAddr := strings.Split(contentServiceOptions, ",")[0] // e.g. "localhost:8081"
+			lis, err := net.Listen("tcp", adminAddr)
+			if err != nil {
+				fmt.Println("Failed to listen on admin gRPC port:", err)
+				return
+			}
+
+			grpcServer := grpc.NewServer()
+			proto.RegisterVideoContentAdminServiceServer(grpcServer, nwService)
+			fmt.Println("Admin gRPC listening on", adminAddr)
+
+			if err := grpcServer.Serve(lis); err != nil {
+				fmt.Println("Admin gRPC server error:", err)
+			}
+		}()
+	}
+
 	err = server.Start(lis)
 	if err != nil {
 		fmt.Println("Error starting server:", err)

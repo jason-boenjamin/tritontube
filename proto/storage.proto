@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "internal/proto";
+
+message WriteRequest {
+  string video_id = 1;
+  string filename = 2;
+  bytes data = 3;
+}
+
+message WriteResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message ReadRequest {
+  string video_id = 1;
+  string filename = 2;
+}
+
+message ReadResponse {
+  bytes data = 1;
+  string error = 2;
+}
+
+service VideoContentStorage {
+  rpc Write(WriteRequest) returns (WriteResponse);
+  rpc Read(ReadRequest) returns (ReadResponse);
+}
