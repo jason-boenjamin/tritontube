@@ -32,7 +32,6 @@ var _ VideoContentService = (*NetworkVideoContentService)(nil)
 
 var _ proto.VideoContentAdminServiceServer = (*NetworkVideoContentService)(nil)
 
-// NewNetworkVideoContentService creates a new distributed content service.
 // contentOption format: "adminhost:adminport,node1:port1,node2:port2,..."
 func NewNetworkVideoContentService(contentOption string) (*NetworkVideoContentService, error) {
 	nodes := parseNodeAddresses(contentOption)
@@ -59,7 +58,6 @@ func NewNetworkVideoContentService(contentOption string) (*NetworkVideoContentSe
 	}, nil
 }
 
-// Write sends the file to the correct node
 func (n *NetworkVideoContentService) Write(videoId string, filename string, data []byte) error {
 	key := fmt.Sprintf("%s/%s", videoId, filename)
 	node := n.ring.GetNode(key)
@@ -90,7 +88,6 @@ func (n *NetworkVideoContentService) Write(videoId string, filename string, data
 	return nil
 }
 
-// Read retrieves the file from the correct node
 func (n *NetworkVideoContentService) Read(videoId string, filename string) ([]byte, error) {
 	key := fmt.Sprintf("%s/%s", videoId, filename)
 	node := n.ring.GetNode(key)
@@ -120,7 +117,6 @@ func (n *NetworkVideoContentService) Read(videoId string, filename string) ([]by
 	return resp.Data, nil
 }
 
-// parseNodeAddresses splits comma-separated list into []string
 func parseNodeAddresses(option string) []string {
 	parts := strings.Split(option, ",")
 	for i := range parts {
@@ -162,7 +158,7 @@ func (n *NetworkVideoContentService) FileMigration(from string) (int, error) {
 		target := n.ring.GetNode(key)
 
 		if target != from {
-			// Read from source
+			// Read from sodurce
 			resp, err := clientFrom.Read(context.Background(), &proto.ReadRequest{
 				VideoId:  videoID,
 				Filename: filename,
@@ -222,7 +218,7 @@ func (n *NetworkVideoContentService) AddNode(ctx context.Context, req *proto.Add
 	n.clients[addr] = proto.NewVideoContentStorageClient(conn)
 	n.ring.AddNode(addr)
 
-	// Migrate files to new node
+	// Migrate files to new nodess
 	//return &proto.AddNodeResponse{}, nil
 	migrated, err := n.FileMigration(addr)
 	if err != nil {
@@ -254,7 +250,6 @@ func (n *NetworkVideoContentService) RemoveNode(ctx context.Context, req *proto.
 
 // Consistent hshing section
 
-// ConsistentHashRing maps keys to nodes using consistent hashing.
 type ConsistentHashRing struct {
 	nodes   []uint64
 	nodeMap map[uint64]string
@@ -268,7 +263,7 @@ func NewConsistentHashRing() *ConsistentHashRing {
 	}
 }
 
-// AddNode adds a node to the ring.
+// AddNode adds a node to the ring. FIX THIS
 func (r *ConsistentHashRing) AddNode(address string) {
 	hash := hashStringToUint64(address)
 	r.nodes = append(r.nodes, hash)
