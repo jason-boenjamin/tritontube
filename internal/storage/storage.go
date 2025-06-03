@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"tritontube/internal/proto"
 )
@@ -27,12 +28,10 @@ func (s *StorageServer) Write(ctx context.Context, req *proto.WriteRequest) (*pr
 	dirPath := filepath.Join(s.BaseDir, req.VideoId)
 	filePath := filepath.Join(dirPath, req.Filename)
 
-	// Create directory if not exist
 	if err := os.MkdirAll(dirPath, 0777); err != nil {
 		return &proto.WriteResponse{Success: false, Error: err.Error()}, nil
 	}
 
-	// Write file
 	if err := ioutil.WriteFile(filePath, req.Data, 0644); err != nil {
 		return &proto.WriteResponse{Success: false, Error: err.Error()}, nil
 	}
@@ -49,4 +48,20 @@ func (s *StorageServer) Read(ctx context.Context, req *proto.ReadRequest) (*prot
 	}
 
 	return &proto.ReadResponse{Data: data}, nil
+}
+
+func (s *StorageServer) ListFiles(_ context.Context, _ *proto.ListFilesRequest) (*proto.ListFilesResponse, error) {
+	var keys []string
+	filepath.Walk(s.BaseDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		rel, _ := filepath.Rel(s.BaseDir, path) // "videoID/filename"
+		parts := strings.SplitN(rel, string(os.PathSeparator), 2)
+		if len(parts) == 2 {
+			keys = append(keys, parts[0]+"/"+parts[1])
+		}
+		return nil
+	})
+	return &proto.ListFilesResponse{Keys: keys}, nil
 }
