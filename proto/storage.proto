@@ -28,4 +28,11 @@ message ReadResponse {
 service VideoContentStorage {
   rpc Write(WriteRequest) returns (WriteResponse);
   rpc Read(ReadRequest) returns (ReadResponse);
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+}
+
+message ListFilesRequest {}
+
+message ListFilesResponse {
+  repeated string keys = 1;
 }

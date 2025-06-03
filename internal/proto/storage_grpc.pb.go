@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	VideoContentStorage_Write_FullMethodName = "/proto.VideoContentStorage/Write"
-	VideoContentStorage_Read_FullMethodName  = "/proto.VideoContentStorage/Read"
+	VideoContentStorage_Write_FullMethodName     = "/proto.VideoContentStorage/Write"
+	VideoContentStorage_Read_FullMethodName      = "/proto.VideoContentStorage/Read"
+	VideoContentStorage_ListFiles_FullMethodName = "/proto.VideoContentStorage/ListFiles"
 )
 
 // VideoContentStorageClient is the client API for VideoContentStorage service.
@@ -29,6 +30,7 @@ const (
 type VideoContentStorageClient interface {
 	Write(ctx context.Context, in *WriteRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	Read(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (*ReadResponse, error)
+	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
 }
 
 type videoContentStorageClient struct {
@@ -57,12 +59,22 @@ func (c *videoContentStorageClient) Read(ctx context.Context, in *ReadRequest, o
 	return out, nil
 }
 
+func (c *videoContentStorageClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
+	out := new(ListFilesResponse)
+	err := c.cc.Invoke(ctx, VideoContentStorage_ListFiles_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VideoContentStorageServer is the server API for VideoContentStorage service.
 // All implementations must embed UnimplementedVideoContentStorageServer
 // for forward compatibility
 type VideoContentStorageServer interface {
 	Write(context.Context, *WriteRequest) (*WriteResponse, error)
 	Read(context.Context, *ReadRequest) (*ReadResponse, error)
+	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
 	mustEmbedUnimplementedVideoContentStorageServer()
 }
 
@@ -75,6 +87,9 @@ func (UnimplementedVideoContentStorageServer) Write(context.Context, *WriteReque
 }
 func (UnimplementedVideoContentStorageServer) Read(context.Context, *ReadRequest) (*ReadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
+}
+func (UnimplementedVideoContentStorageServer) ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
 }
 func (UnimplementedVideoContentStorageServer) mustEmbedUnimplementedVideoContentStorageServer() {}
 
@@ -125,6 +140,24 @@ func _VideoContentStorage_Read_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VideoContentStorage_ListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoContentStorageServer).ListFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoContentStorage_ListFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoContentStorageServer).ListFiles(ctx, req.(*ListFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VideoContentStorage_ServiceDesc is the grpc.ServiceDesc for VideoContentStorage service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +172,10 @@ var VideoContentStorage_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Read",
 			Handler:    _VideoContentStorage_Read_Handler,
+		},
+		{
+			MethodName: "ListFiles",
+			Handler:    _VideoContentStorage_ListFiles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

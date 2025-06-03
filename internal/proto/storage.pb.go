@@ -237,6 +237,86 @@ func (x *ReadResponse) GetError() string {
 	return ""
 }
 
+type ListFilesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFilesRequest) Reset() {
+	*x = ListFilesRequest{}
+	mi := &file_proto_storage_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFilesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFilesRequest) ProtoMessage() {}
+
+func (x *ListFilesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_storage_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFilesRequest.ProtoReflect.Descriptor instead.
+func (*ListFilesRequest) Descriptor() ([]byte, []int) {
+	return file_proto_storage_proto_rawDescGZIP(), []int{4}
+}
+
+type ListFilesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Keys          []string               `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFilesResponse) Reset() {
+	*x = ListFilesResponse{}
+	mi := &file_proto_storage_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFilesResponse) ProtoMessage() {}
+
+func (x *ListFilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_storage_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFilesResponse.ProtoReflect.Descriptor instead.
+func (*ListFilesResponse) Descriptor() ([]byte, []int) {
+	return file_proto_storage_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ListFilesResponse) GetKeys() []string {
+	if x != nil {
+		return x.Keys
+	}
+	return nil
+}
+
 var File_proto_storage_proto protoreflect.FileDescriptor
 
 const file_proto_storage_proto_rawDesc = "" +
@@ -254,10 +334,14 @@ const file_proto_storage_proto_rawDesc = "" +
 	"\bfilename\x18\x02 \x01(\tR\bfilename\"8\n" +
 	"\fReadResponse\x12\x12\n" +
 	"\x04data\x18\x01 \x01(\fR\x04data\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error2z\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x12\n" +
+	"\x10ListFilesRequest\"'\n" +
+	"\x11ListFilesResponse\x12\x12\n" +
+	"\x04keys\x18\x01 \x03(\tR\x04keys2\xba\x01\n" +
 	"\x13VideoContentStorage\x122\n" +
 	"\x05Write\x12\x13.proto.WriteRequest\x1a\x14.proto.WriteResponse\x12/\n" +
-	"\x04Read\x12\x12.proto.ReadRequest\x1a\x13.proto.ReadResponseB\x10Z\x0einternal/protob\x06proto3"
+	"\x04Read\x12\x12.proto.ReadRequest\x1a\x13.proto.ReadResponse\x12>\n" +
+	"\tListFiles\x12\x17.proto.ListFilesRequest\x1a\x18.proto.ListFilesResponseB\x10Z\x0einternal/protob\x06proto3"
 
 var (
 	file_proto_storage_proto_rawDescOnce sync.Once
@@ -271,20 +355,24 @@ func file_proto_storage_proto_rawDescGZIP() []byte {
 	return file_proto_storage_proto_rawDescData
 }
 
-var file_proto_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_storage_proto_goTypes = []any{
-	(*WriteRequest)(nil),  // 0: proto.WriteRequest
-	(*WriteResponse)(nil), // 1: proto.WriteResponse
-	(*ReadRequest)(nil),   // 2: proto.ReadRequest
-	(*ReadResponse)(nil),  // 3: proto.ReadResponse
+	(*WriteRequest)(nil),      // 0: proto.WriteRequest
+	(*WriteResponse)(nil),     // 1: proto.WriteResponse
+	(*ReadRequest)(nil),       // 2: proto.ReadRequest
+	(*ReadResponse)(nil),      // 3: proto.ReadResponse
+	(*ListFilesRequest)(nil),  // 4: proto.ListFilesRequest
+	(*ListFilesResponse)(nil), // 5: proto.ListFilesResponse
 }
 var file_proto_storage_proto_depIdxs = []int32{
 	0, // 0: proto.VideoContentStorage.Write:input_type -> proto.WriteRequest
 	2, // 1: proto.VideoContentStorage.Read:input_type -> proto.ReadRequest
-	1, // 2: proto.VideoContentStorage.Write:output_type -> proto.WriteResponse
-	3, // 3: proto.VideoContentStorage.Read:output_type -> proto.ReadResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: proto.VideoContentStorage.ListFiles:input_type -> proto.ListFilesRequest
+	1, // 3: proto.VideoContentStorage.Write:output_type -> proto.WriteResponse
+	3, // 4: proto.VideoContentStorage.Read:output_type -> proto.ReadResponse
+	5, // 5: proto.VideoContentStorage.ListFiles:output_type -> proto.ListFilesResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -301,7 +389,7 @@ func file_proto_storage_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_storage_proto_rawDesc), len(file_proto_storage_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

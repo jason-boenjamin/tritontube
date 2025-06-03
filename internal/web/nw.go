@@ -7,8 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"os"
-	"path/filepath"
+	"google.golang.org/grpc/credentials/insecure"
 	"sort"
 	"strings"
 	"sync"
@@ -29,14 +28,12 @@ type NetworkVideoContentService struct {
 
 // Uncomment the following line to ensure NetworkVideoContentService implements VideoContentService
 var _ VideoContentService = (*NetworkVideoContentService)(nil)
-
 var _ proto.VideoContentAdminServiceServer = (*NetworkVideoContentService)(nil)
 
-// contentOption format: "adminhost:adminport,node1:port1,node2:port2,..."
 func NewNetworkVideoContentService(contentOption string) (*NetworkVideoContentService, error) {
 	nodes := parseNodeAddresses(contentOption)
 	if len(nodes) < 2 {
-		return nil, fmt.Errorf("expected at least one admin + one storage node")
+		return nil, fmt.Errorf("expected at least ADMIN + one storage node")
 	}
 
 	storageAddrs := nodes[1:]
@@ -44,9 +41,12 @@ func NewNetworkVideoContentService(contentOption string) (*NetworkVideoContentSe
 	ring := NewConsistentHashRing()
 
 	for _, addr := range storageAddrs {
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		conn, err := grpc.Dial(
+			addr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to connect to node %s: %v", addr, err)
+			return nil, fmt.Errorf("failed to connect to storage node %s: %v", addr, err)
 		}
 		clients[addr] = proto.NewVideoContentStorageClient(conn)
 		ring.AddNode(addr)
@@ -58,8 +58,8 @@ func NewNetworkVideoContentService(contentOption string) (*NetworkVideoContentSe
 	}, nil
 }
 
-func (n *NetworkVideoContentService) Write(videoId string, filename string, data []byte) error {
-	key := fmt.Sprintf("%s/%s", videoId, filename)
+func (n *NetworkVideoContentService) Write(videoID, filename string, data []byte) error {
+	key := fmt.Sprintf("%s/%s", videoID, filename)
 	node := n.ring.GetNode(key)
 
 	n.mu.RLock()
@@ -73,7 +73,7 @@ func (n *NetworkVideoContentService) Write(videoId string, filename string, data
 	defer cancel()
 
 	req := &proto.WriteRequest{
-		VideoId:  videoId,
+		VideoId:  videoID,
 		Filename: filename,
 		Data:     data,
 	}
@@ -88,8 +88,8 @@ func (n *NetworkVideoContentService) Write(videoId string, filename string, data
 	return nil
 }
 
-func (n *NetworkVideoContentService) Read(videoId string, filename string) ([]byte, error) {
-	key := fmt.Sprintf("%s/%s", videoId, filename)
+func (n *NetworkVideoContentService) Read(videoID, filename string) ([]byte, error) {
+	key := fmt.Sprintf("%s/%s", videoID, filename)
 	node := n.ring.GetNode(key)
 
 	n.mu.RLock()
@@ -103,7 +103,7 @@ func (n *NetworkVideoContentService) Read(videoId string, filename string) ([]by
 	defer cancel()
 
 	req := &proto.ReadRequest{
-		VideoId:  videoId,
+		VideoId:  videoID,
 		Filename: filename,
 	}
 
@@ -117,79 +117,7 @@ func (n *NetworkVideoContentService) Read(videoId string, filename string) ([]by
 	return resp.Data, nil
 }
 
-func parseNodeAddresses(option string) []string {
-	parts := strings.Split(option, ",")
-	for i := range parts {
-		parts[i] = strings.TrimSpace(parts[i])
-	}
-	return parts
-}
-
-// Admin gRPC server section
-
-func (n *NetworkVideoContentService) FileMigration(from string) (int, error) {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	clientFrom, ok := n.clients[from]
-	if !ok {
-		return 0, fmt.Errorf("source client %s not found", from)
-	}
-
-	var migrated int
-
-	// Absolute path to the from-node's local storage folder
-	basePath := filepath.Join("storage", extractPort(from))
-
-	// Walk all files under the basePath
-	err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
-			return nil
-		}
-
-		relPath, _ := filepath.Rel(basePath, path)
-		parts := strings.SplitN(relPath, string(filepath.Separator), 2)
-		if len(parts) != 2 {
-			return nil
-		}
-		videoID, filename := parts[0], parts[1]
-
-		key := fmt.Sprintf("%s/%s", videoID, filename)
-		target := n.ring.GetNode(key)
-
-		if target != from {
-			// Read from sodurce
-			resp, err := clientFrom.Read(context.Background(), &proto.ReadRequest{
-				VideoId:  videoID,
-				Filename: filename,
-			})
-			if err != nil || resp.Error != "" {
-				return nil
-			}
-
-			clientTo := n.clients[target]
-			_, err = clientTo.Write(context.Background(), &proto.WriteRequest{
-				VideoId:  videoID,
-				Filename: filename,
-				Data:     resp.Data,
-			})
-			if err == nil {
-				migrated++
-			}
-		}
-
-		return nil
-	})
-
-	return migrated, err
-}
-
-func extractPort(addr string) string {
-	parts := strings.Split(addr, ":")
-	return parts[len(parts)-1]
-}
-
-func (n *NetworkVideoContentService) ListNodes(ctx context.Context, req *proto.ListNodesRequest) (*proto.ListNodesResponse, error) {
+func (n *NetworkVideoContentService) ListNodes(_ context.Context, _ *proto.ListNodesRequest) (*proto.ListNodesResponse, error) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
@@ -198,48 +126,135 @@ func (n *NetworkVideoContentService) ListNodes(ctx context.Context, req *proto.L
 		addrs = append(addrs, addr)
 	}
 	return &proto.ListNodesResponse{Nodes: addrs}, nil
-
 }
 
-func (n *NetworkVideoContentService) AddNode(ctx context.Context, req *proto.AddNodeRequest) (*proto.AddNodeResponse, error) {
+func (n *NetworkVideoContentService) AddNode(_ context.Context, req *proto.AddNodeRequest) (*proto.AddNodeResponse, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	addr := req.NodeAddress
-	if _, exists := n.clients[addr]; exists {
+	newAddr := req.NodeAddress
+	if _, exists := n.clients[newAddr]; exists {
 		return &proto.AddNodeResponse{}, nil
 	}
 
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	ctxDial, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	conn, err := grpc.DialContext(
+		ctxDial,
+		newAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to new node %s: %v", newAddr, err)
 	}
 
-	n.clients[addr] = proto.NewVideoContentStorageClient(conn)
-	n.ring.AddNode(addr)
+	n.clients[newAddr] = proto.NewVideoContentStorageClient(conn)
+	n.ring.AddNode(newAddr)
 
-	// Migrate files to new nodess
-	//return &proto.AddNodeResponse{}, nil
-	migrated, err := n.FileMigration(addr)
-	if err != nil {
-		return nil, err
+	migrated := 0
+	for oldAddr, clientOld := range n.clients {
+		if oldAddr == newAddr {
+			continue
+		}
+
+		ctxList, cancelList := context.WithTimeout(context.Background(), 5*time.Second)
+		respList, err := clientOld.ListFiles(ctxList, &proto.ListFilesRequest{})
+		cancelList()
+		if err != nil {
+			continue
+		}
+
+		for _, fullKey := range respList.Keys {
+			videoID, filename := splitKey(fullKey)
+			key := fmt.Sprintf("%s/%s", videoID, filename)
+			target := n.ring.GetNode(key)
+			if target == newAddr {
+				ctxRead, cancelRead := context.WithTimeout(context.Background(), 5*time.Second)
+				readResp, readErr := clientOld.Read(ctxRead, &proto.ReadRequest{
+					VideoId:  videoID,
+					Filename: filename,
+				})
+				cancelRead()
+				if readErr != nil || readResp.Error != "" {
+					continue
+				}
+
+				clientNew := n.clients[newAddr]
+				ctxWrite, cancelWrite := context.WithTimeout(context.Background(), 5*time.Second)
+				_, writeErr := clientNew.Write(ctxWrite, &proto.WriteRequest{
+					VideoId:  videoID,
+					Filename: filename,
+					Data:     readResp.Data,
+				})
+				cancelWrite()
+				if writeErr == nil {
+					migrated++
+				}
+			}
+		}
 	}
 
 	return &proto.AddNodeResponse{MigratedFileCount: int32(migrated)}, nil
 }
 
-func (n *NetworkVideoContentService) RemoveNode(ctx context.Context, req *proto.RemoveNodeRequest) (*proto.RemoveNodeResponse, error) {
+func (n *NetworkVideoContentService) RemoveNode(_ context.Context, req *proto.RemoveNodeRequest) (*proto.RemoveNodeResponse, error) {
 	n.mu.Lock()
 	addr := req.NodeAddress
 	if _, exists := n.clients[addr]; !exists {
 		n.mu.Unlock()
 		return &proto.RemoveNodeResponse{}, nil
 	}
+	n.mu.Unlock()
 
+	clientOld := n.clients[addr]
+	ctxList, cancelList := context.WithTimeout(context.Background(), 5*time.Second)
+	respList, err := clientOld.ListFiles(ctxList, &proto.ListFilesRequest{})
+	cancelList()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list files on node %s: %v", addr, err)
+	}
+
+	n.mu.Lock()
 	n.ring.RemoveNode(addr)
 	n.mu.Unlock()
 
-	migrated, _ := n.FileMigration(addr)
+	migrated := 0
+	for _, fullKey := range respList.Keys {
+		videoID, filename := splitKey(fullKey)
+		key := fmt.Sprintf("%s/%s", videoID, filename)
+		newOwner := n.ring.GetNode(key)
+		if newOwner == "" {
+			continue
+		}
+
+		ctxRead, cancelRead := context.WithTimeout(context.Background(), 5*time.Second)
+		readResp, readErr := clientOld.Read(ctxRead, &proto.ReadRequest{
+			VideoId:  videoID,
+			Filename: filename,
+		})
+		cancelRead()
+		if readErr != nil || readResp.Error != "" {
+			continue
+		}
+
+		n.mu.RLock()
+		clientNew, ok := n.clients[newOwner]
+		n.mu.RUnlock()
+		if !ok {
+			continue
+		}
+		ctxWrite, cancelWrite := context.WithTimeout(context.Background(), 5*time.Second)
+		_, writeErr := clientNew.Write(ctxWrite, &proto.WriteRequest{
+			VideoId:  videoID,
+			Filename: filename,
+			Data:     readResp.Data,
+		})
+		cancelWrite()
+		if writeErr == nil {
+			migrated++
+		}
+	}
 
 	n.mu.Lock()
 	delete(n.clients, addr)
@@ -248,14 +263,27 @@ func (n *NetworkVideoContentService) RemoveNode(ctx context.Context, req *proto.
 	return &proto.RemoveNodeResponse{MigratedFileCount: int32(migrated)}, nil
 }
 
-// Consistent hshing section
+func parseNodeAddresses(option string) []string {
+	parts := strings.Split(option, ",")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+	return parts
+}
+
+func splitKey(fullKey string) (string, string) {
+	parts := strings.SplitN(fullKey, "/", 2)
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
+}
 
 type ConsistentHashRing struct {
 	nodes   []uint64
 	nodeMap map[uint64]string
 }
 
-// NewConsistentHashRing initializes an empty ring.
 func NewConsistentHashRing() *ConsistentHashRing {
 	return &ConsistentHashRing{
 		nodes:   []uint64{},
@@ -263,14 +291,18 @@ func NewConsistentHashRing() *ConsistentHashRing {
 	}
 }
 
-// AddNode adds a node to the ring. FIX THIS
 func (r *ConsistentHashRing) AddNode(address string) {
 	hash := hashStringToUint64(address)
+
+	for _, h := range r.nodes {
+		if h == hash {
+			return
+		}
+	}
+
 	r.nodes = append(r.nodes, hash)
 	r.nodeMap[hash] = address
-	sort.Slice(r.nodes, func(i, j int) bool {
-		return r.nodes[i] < r.nodes[j]
-	})
+	sort.Slice(r.nodes, func(i, j int) bool { return r.nodes[i] < r.nodes[j] })
 }
 
 func (r *ConsistentHashRing) RemoveNode(address string) {
@@ -284,13 +316,11 @@ func (r *ConsistentHashRing) RemoveNode(address string) {
 	}
 }
 
-// GetNode returns the node responsible for the given key.
 func (r *ConsistentHashRing) GetNode(key string) string {
 	if len(r.nodes) == 0 {
 		return ""
 	}
 	keyHash := hashStringToUint64(key)
-
 	for _, nodeHash := range r.nodes {
 		if keyHash <= nodeHash {
 			return r.nodeMap[nodeHash]
@@ -299,7 +329,6 @@ func (r *ConsistentHashRing) GetNode(key string) string {
 	return r.nodeMap[r.nodes[0]]
 }
 
-// hashStringToUint64 hashes a string using SHA-256 and takes the first 8 bytes.
 func hashStringToUint64(s string) uint64 {
 	sum := sha256.Sum256([]byte(s))
 	return binary.BigEndian.Uint64(sum[:8])
