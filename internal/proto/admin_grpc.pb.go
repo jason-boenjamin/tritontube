@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v3.12.4
-// source: proto/admin.proto
+// source: admin.proto
 
 package proto
 
@@ -180,5 +180,5 @@ var VideoContentAdminService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/admin.proto",
+	Metadata: "admin.proto",
 }

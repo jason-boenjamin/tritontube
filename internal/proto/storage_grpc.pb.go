@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v3.12.4
-// source: proto/storage.proto
+// source: storage.proto
 
 package proto
 
@@ -22,6 +22,7 @@ const (
 	VideoContentStorage_Write_FullMethodName     = "/proto.VideoContentStorage/Write"
 	VideoContentStorage_Read_FullMethodName      = "/proto.VideoContentStorage/Read"
 	VideoContentStorage_ListFiles_FullMethodName = "/proto.VideoContentStorage/ListFiles"
+	VideoContentStorage_Delete_FullMethodName    = "/proto.VideoContentStorage/Delete"
 )
 
 // VideoContentStorageClient is the client API for VideoContentStorage service.
@@ -31,6 +32,7 @@ type VideoContentStorageClient interface {
 	Write(ctx context.Context, in *WriteRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	Read(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (*ReadResponse, error)
 	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error)
+	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 }
 
 type videoContentStorageClient struct {
@@ -68,6 +70,15 @@ func (c *videoContentStorageClient) ListFiles(ctx context.Context, in *ListFiles
 	return out, nil
 }
 
+func (c *videoContentStorageClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+	out := new(DeleteResponse)
+	err := c.cc.Invoke(ctx, VideoContentStorage_Delete_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VideoContentStorageServer is the server API for VideoContentStorage service.
 // All implementations must embed UnimplementedVideoContentStorageServer
 // for forward compatibility
@@ -75,6 +86,7 @@ type VideoContentStorageServer interface {
 	Write(context.Context, *WriteRequest) (*WriteResponse, error)
 	Read(context.Context, *ReadRequest) (*ReadResponse, error)
 	ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error)
+	Delete(context.Context, *DeleteRequest) (*DeleteResponse, error)
 	mustEmbedUnimplementedVideoContentStorageServer()
 }
 
@@ -90,6 +102,9 @@ func (UnimplementedVideoContentStorageServer) Read(context.Context, *ReadRequest
 }
 func (UnimplementedVideoContentStorageServer) ListFiles(context.Context, *ListFilesRequest) (*ListFilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFiles not implemented")
+}
+func (UnimplementedVideoContentStorageServer) Delete(context.Context, *DeleteRequest) (*DeleteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedVideoContentStorageServer) mustEmbedUnimplementedVideoContentStorageServer() {}
 
@@ -158,6 +173,24 @@ func _VideoContentStorage_ListFiles_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VideoContentStorage_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoContentStorageServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoContentStorage_Delete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoContentStorageServer).Delete(ctx, req.(*DeleteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VideoContentStorage_ServiceDesc is the grpc.ServiceDesc for VideoContentStorage service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -177,7 +210,11 @@ var VideoContentStorage_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ListFiles",
 			Handler:    _VideoContentStorage_ListFiles_Handler,
 		},
+		{
+			MethodName: "Delete",
+			Handler:    _VideoContentStorage_Delete_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/storage.proto",
+	Metadata: "storage.proto",
 }

@@ -121,19 +121,22 @@ func (n *NetworkVideoContentService) ListNodes(_ context.Context, _ *proto.ListN
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	var addrs []string
-	for addr := range n.clients {
-		addrs = append(addrs, addr)
+	var sortedAddrs []string
+	for _, h := range n.ring.nodes {
+		sortedAddrs = append(sortedAddrs, n.ring.nodeMap[h])
 	}
-	return &proto.ListNodesResponse{Nodes: addrs}, nil
+	return &proto.ListNodesResponse{Nodes: sortedAddrs}, nil
 }
 
-func (n *NetworkVideoContentService) AddNode(_ context.Context, req *proto.AddNodeRequest) (*proto.AddNodeResponse, error) {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
+func (n *NetworkVideoContentService) AddNode(
+	_ context.Context,
+	req *proto.AddNodeRequest,
+) (*proto.AddNodeResponse, error) {
 	newAddr := req.NodeAddress
+
+	n.mu.Lock()
 	if _, exists := n.clients[newAddr]; exists {
+		n.mu.Unlock()
 		return &proto.AddNodeResponse{}, nil
 	}
 
@@ -146,18 +149,16 @@ func (n *NetworkVideoContentService) AddNode(_ context.Context, req *proto.AddNo
 		grpc.WithBlock(),
 	)
 	if err != nil {
+		n.mu.Unlock()
 		return nil, fmt.Errorf("failed to connect to new node %s: %v", newAddr, err)
 	}
 
 	n.clients[newAddr] = proto.NewVideoContentStorageClient(conn)
 	n.ring.AddNode(newAddr)
+	n.mu.Unlock()
 
 	migrated := 0
 	for oldAddr, clientOld := range n.clients {
-		if oldAddr == newAddr {
-			continue
-		}
-
 		ctxList, cancelList := context.WithTimeout(context.Background(), 5*time.Second)
 		respList, err := clientOld.ListFiles(ctxList, &proto.ListFilesRequest{})
 		cancelList()
@@ -169,45 +170,64 @@ func (n *NetworkVideoContentService) AddNode(_ context.Context, req *proto.AddNo
 			videoID, filename := splitKey(fullKey)
 			key := fmt.Sprintf("%s/%s", videoID, filename)
 			target := n.ring.GetNode(key)
-			if target == newAddr {
-				ctxRead, cancelRead := context.WithTimeout(context.Background(), 5*time.Second)
-				readResp, readErr := clientOld.Read(ctxRead, &proto.ReadRequest{
-					VideoId:  videoID,
-					Filename: filename,
-				})
-				cancelRead()
-				if readErr != nil || readResp.Error != "" {
-					continue
-				}
-
-				clientNew := n.clients[newAddr]
-				ctxWrite, cancelWrite := context.WithTimeout(context.Background(), 5*time.Second)
-				_, writeErr := clientNew.Write(ctxWrite, &proto.WriteRequest{
-					VideoId:  videoID,
-					Filename: filename,
-					Data:     readResp.Data,
-				})
-				cancelWrite()
-				if writeErr == nil {
-					migrated++
-				}
+			if target == oldAddr {
+				continue
 			}
+
+			ctxRead, cancelRead := context.WithTimeout(context.Background(), 5*time.Second)
+			readResp, readErr := clientOld.Read(ctxRead, &proto.ReadRequest{
+				VideoId:  videoID,
+				Filename: filename,
+			})
+			cancelRead()
+			if readErr != nil || readResp.Error != "" {
+				continue
+			}
+
+			n.mu.RLock()
+			clientNew, ok := n.clients[target]
+			n.mu.RUnlock()
+			if !ok {
+				continue
+			}
+
+			ctxWrite, cancelWrite := context.WithTimeout(context.Background(), 5*time.Second)
+			_, writeErr := clientNew.Write(ctxWrite, &proto.WriteRequest{
+				VideoId:  videoID,
+				Filename: filename,
+				Data:     readResp.Data,
+			})
+			cancelWrite()
+			if writeErr != nil {
+				continue
+			}
+
+			ctxDel, cancelDel := context.WithTimeout(context.Background(), 5*time.Second)
+			_, _ = clientOld.Delete(ctxDel, &proto.DeleteRequest{
+				VideoId:  videoID,
+				Filename: filename,
+			})
+			cancelDel()
+
+			migrated++
 		}
 	}
 
 	return &proto.AddNodeResponse{MigratedFileCount: int32(migrated)}, nil
 }
-
-func (n *NetworkVideoContentService) RemoveNode(_ context.Context, req *proto.RemoveNodeRequest) (*proto.RemoveNodeResponse, error) {
-	n.mu.Lock()
+func (n *NetworkVideoContentService) RemoveNode(
+	_ context.Context,
+	req *proto.RemoveNodeRequest,
+) (*proto.RemoveNodeResponse, error) {
 	addr := req.NodeAddress
-	if _, exists := n.clients[addr]; !exists {
-		n.mu.Unlock()
+
+	n.mu.RLock()
+	clientOld, exists := n.clients[addr]
+	n.mu.RUnlock()
+	if !exists {
 		return &proto.RemoveNodeResponse{}, nil
 	}
-	n.mu.Unlock()
 
-	clientOld := n.clients[addr]
 	ctxList, cancelList := context.WithTimeout(context.Background(), 5*time.Second)
 	respList, err := clientOld.ListFiles(ctxList, &proto.ListFilesRequest{})
 	cancelList()
@@ -224,7 +244,7 @@ func (n *NetworkVideoContentService) RemoveNode(_ context.Context, req *proto.Re
 		videoID, filename := splitKey(fullKey)
 		key := fmt.Sprintf("%s/%s", videoID, filename)
 		newOwner := n.ring.GetNode(key)
-		if newOwner == "" {
+		if newOwner == "" || newOwner == addr {
 			continue
 		}
 
@@ -244,6 +264,7 @@ func (n *NetworkVideoContentService) RemoveNode(_ context.Context, req *proto.Re
 		if !ok {
 			continue
 		}
+
 		ctxWrite, cancelWrite := context.WithTimeout(context.Background(), 5*time.Second)
 		_, writeErr := clientNew.Write(ctxWrite, &proto.WriteRequest{
 			VideoId:  videoID,
@@ -251,11 +272,19 @@ func (n *NetworkVideoContentService) RemoveNode(_ context.Context, req *proto.Re
 			Data:     readResp.Data,
 		})
 		cancelWrite()
-		if writeErr == nil {
-			migrated++
+		if writeErr != nil {
+			continue
 		}
-	}
 
+		ctxDel, cancelDel := context.WithTimeout(context.Background(), 5*time.Second)
+		_, _ = clientOld.Delete(ctxDel, &proto.DeleteRequest{
+			VideoId:  videoID,
+			Filename: filename,
+		})
+		cancelDel()
+
+		migrated++
+	}
 	n.mu.Lock()
 	delete(n.clients, addr)
 	n.mu.Unlock()

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v3.12.4
-// source: proto/admin.proto
+// source: admin.proto
 
 package proto
 
@@ -30,7 +30,7 @@ type AddNodeRequest struct {
 
 func (x *AddNodeRequest) Reset() {
 	*x = AddNodeRequest{}
-	mi := &file_proto_admin_proto_msgTypes[0]
+	mi := &file_admin_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *AddNodeRequest) String() string {
 func (*AddNodeRequest) ProtoMessage() {}
 
 func (x *AddNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_admin_proto_msgTypes[0]
+	mi := &file_admin_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *AddNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddNodeRequest.ProtoReflect.Descriptor instead.
 func (*AddNodeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_admin_proto_rawDescGZIP(), []int{0}
+	return file_admin_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *AddNodeRequest) GetNodeAddress() string {
@@ -74,7 +74,7 @@ type AddNodeResponse struct {
 
 func (x *AddNodeResponse) Reset() {
 	*x = AddNodeResponse{}
-	mi := &file_proto_admin_proto_msgTypes[1]
+	mi := &file_admin_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +86,7 @@ func (x *AddNodeResponse) String() string {
 func (*AddNodeResponse) ProtoMessage() {}
 
 func (x *AddNodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_admin_proto_msgTypes[1]
+	mi := &file_admin_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +99,7 @@ func (x *AddNodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddNodeResponse.ProtoReflect.Descriptor instead.
 func (*AddNodeResponse) Descriptor() ([]byte, []int) {
-	return file_proto_admin_proto_rawDescGZIP(), []int{1}
+	return file_admin_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AddNodeResponse) GetMigratedFileCount() int32 {
@@ -118,7 +118,7 @@ type RemoveNodeRequest struct {
 
 func (x *RemoveNodeRequest) Reset() {
 	*x = RemoveNodeRequest{}
-	mi := &file_proto_admin_proto_msgTypes[2]
+	mi := &file_admin_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -130,7 +130,7 @@ func (x *RemoveNodeRequest) String() string {
 func (*RemoveNodeRequest) ProtoMessage() {}
 
 func (x *RemoveNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_admin_proto_msgTypes[2]
+	mi := &file_admin_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -143,7 +143,7 @@ func (x *RemoveNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveNodeRequest.ProtoReflect.Descriptor instead.
 func (*RemoveNodeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_admin_proto_rawDescGZIP(), []int{2}
+	return file_admin_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RemoveNodeRequest) GetNodeAddress() string {
@@ -162,7 +162,7 @@ type RemoveNodeResponse struct {
 
 func (x *RemoveNodeResponse) Reset() {
 	*x = RemoveNodeResponse{}
-	mi := &file_proto_admin_proto_msgTypes[3]
+	mi := &file_admin_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -174,7 +174,7 @@ func (x *RemoveNodeResponse) String() string {
 func (*RemoveNodeResponse) ProtoMessage() {}
 
 func (x *RemoveNodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_admin_proto_msgTypes[3]
+	mi := &file_admin_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +187,7 @@ func (x *RemoveNodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveNodeResponse.ProtoReflect.Descriptor instead.
 func (*RemoveNodeResponse) Descriptor() ([]byte, []int) {
-	return file_proto_admin_proto_rawDescGZIP(), []int{3}
+	return file_admin_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *RemoveNodeResponse) GetMigratedFileCount() int32 {
@@ -205,7 +205,7 @@ type ListNodesRequest struct {
 
 func (x *ListNodesRequest) Reset() {
 	*x = ListNodesRequest{}
-	mi := &file_proto_admin_proto_msgTypes[4]
+	mi := &file_admin_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -217,7 +217,7 @@ func (x *ListNodesRequest) String() string {
 func (*ListNodesRequest) ProtoMessage() {}
 
 func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_admin_proto_msgTypes[4]
+	mi := &file_admin_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -230,7 +230,7 @@ func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodesRequest.ProtoReflect.Descriptor instead.
 func (*ListNodesRequest) Descriptor() ([]byte, []int) {
-	return file_proto_admin_proto_rawDescGZIP(), []int{4}
+	return file_admin_proto_rawDescGZIP(), []int{4}
 }
 
 type ListNodesResponse struct {
@@ -242,7 +242,7 @@ type ListNodesResponse struct {
 
 func (x *ListNodesResponse) Reset() {
 	*x = ListNodesResponse{}
-	mi := &file_proto_admin_proto_msgTypes[5]
+	mi := &file_admin_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -254,7 +254,7 @@ func (x *ListNodesResponse) String() string {
 func (*ListNodesResponse) ProtoMessage() {}
 
 func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_admin_proto_msgTypes[5]
+	mi := &file_admin_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -267,7 +267,7 @@ func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodesResponse.ProtoReflect.Descriptor instead.
 func (*ListNodesResponse) Descriptor() ([]byte, []int) {
-	return file_proto_admin_proto_rawDescGZIP(), []int{5}
+	return file_admin_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListNodesResponse) GetNodes() []string {
@@ -277,11 +277,11 @@ func (x *ListNodesResponse) GetNodes() []string {
 	return nil
 }
 
-var File_proto_admin_proto protoreflect.FileDescriptor
+var File_admin_proto protoreflect.FileDescriptor
 
-const file_proto_admin_proto_rawDesc = "" +
+const file_admin_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/admin.proto\x12\n" +
+	"\vadmin.proto\x12\n" +
 	"tritontube\"3\n" +
 	"\x0eAddNodeRequest\x12!\n" +
 	"\fnode_address\x18\x01 \x01(\tR\vnodeAddress\"A\n" +
@@ -301,19 +301,19 @@ const file_proto_admin_proto_rawDesc = "" +
 	"\tListNodes\x12\x1c.tritontube.ListNodesRequest\x1a\x1d.tritontube.ListNodesResponseB\x16Z\x14internal/proto;protob\x06proto3"
 
 var (
-	file_proto_admin_proto_rawDescOnce sync.Once
-	file_proto_admin_proto_rawDescData []byte
+	file_admin_proto_rawDescOnce sync.Once
+	file_admin_proto_rawDescData []byte
 )
 
-func file_proto_admin_proto_rawDescGZIP() []byte {
-	file_proto_admin_proto_rawDescOnce.Do(func() {
-		file_proto_admin_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_admin_proto_rawDesc), len(file_proto_admin_proto_rawDesc)))
+func file_admin_proto_rawDescGZIP() []byte {
+	file_admin_proto_rawDescOnce.Do(func() {
+		file_admin_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_admin_proto_rawDesc), len(file_admin_proto_rawDesc)))
 	})
-	return file_proto_admin_proto_rawDescData
+	return file_admin_proto_rawDescData
 }
 
-var file_proto_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_proto_admin_proto_goTypes = []any{
+var file_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_admin_proto_goTypes = []any{
 	(*AddNodeRequest)(nil),     // 0: tritontube.AddNodeRequest
 	(*AddNodeResponse)(nil),    // 1: tritontube.AddNodeResponse
 	(*RemoveNodeRequest)(nil),  // 2: tritontube.RemoveNodeRequest
@@ -321,7 +321,7 @@ var file_proto_admin_proto_goTypes = []any{
 	(*ListNodesRequest)(nil),   // 4: tritontube.ListNodesRequest
 	(*ListNodesResponse)(nil),  // 5: tritontube.ListNodesResponse
 }
-var file_proto_admin_proto_depIdxs = []int32{
+var file_admin_proto_depIdxs = []int32{
 	0, // 0: tritontube.VideoContentAdminService.AddNode:input_type -> tritontube.AddNodeRequest
 	2, // 1: tritontube.VideoContentAdminService.RemoveNode:input_type -> tritontube.RemoveNodeRequest
 	4, // 2: tritontube.VideoContentAdminService.ListNodes:input_type -> tritontube.ListNodesRequest
@@ -335,26 +335,26 @@ var file_proto_admin_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_proto_admin_proto_init() }
-func file_proto_admin_proto_init() {
-	if File_proto_admin_proto != nil {
+func init() { file_admin_proto_init() }
+func file_admin_proto_init() {
+	if File_admin_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_admin_proto_rawDesc), len(file_proto_admin_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_proto_rawDesc), len(file_admin_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_admin_proto_goTypes,
-		DependencyIndexes: file_proto_admin_proto_depIdxs,
-		MessageInfos:      file_proto_admin_proto_msgTypes,
+		GoTypes:           file_admin_proto_goTypes,
+		DependencyIndexes: file_admin_proto_depIdxs,
+		MessageInfos:      file_admin_proto_msgTypes,
 	}.Build()
-	File_proto_admin_proto = out.File
-	file_proto_admin_proto_goTypes = nil
-	file_proto_admin_proto_depIdxs = nil
+	File_admin_proto = out.File
+	file_admin_proto_goTypes = nil
+	file_admin_proto_depIdxs = nil
 }

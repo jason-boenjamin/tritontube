@@ -24,6 +24,9 @@ go.work.sum
 # env file
 .env
 
+.db
+test.sh
+
 *.mp4
 *.mpd
 *.m4s

@@ -29,10 +29,22 @@ service VideoContentStorage {
   rpc Write(WriteRequest) returns (WriteResponse);
   rpc Read(ReadRequest) returns (ReadResponse);
   rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+
 }
 
 message ListFilesRequest {}
 
 message ListFilesResponse {
   repeated string keys = 1;
+}
+
+message DeleteRequest {
+  string video_id = 1;
+  string filename = 2;
+}
+
+message DeleteResponse {
+  bool success = 1;
+  string error = 2;
 }
