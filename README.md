@@ -40,11 +40,12 @@ cd tritontube
 go build ./...
 
 # Run coordinator
-go run cmd/coordinator/main.go
+go run cmd/admin/main.go
 
 # Run a storage server
 go run cmd/storage/main.go --port=5001
 
 # Start client
 go run cmd/client/main.go
+
 
