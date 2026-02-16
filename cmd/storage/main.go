@@ -45,7 +45,14 @@ func main() {
 	}
 
 	// Create gRPC server
-	grpcServer := grpc.NewServer()
+	// grpcServer := grpc.NewServer()
+
+	maxMsg := 128 * 1024 * 1024 // 128MB
+
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(maxMsg),
+		grpc.MaxSendMsgSize(maxMsg),
+	)
 
 	// Register the storage service
 	proto.RegisterVideoContentStorageServer(grpcServer, storage.NewStorageServer(baseDir))

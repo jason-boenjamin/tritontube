@@ -30,6 +30,10 @@ type NetworkVideoContentService struct {
 var _ VideoContentService = (*NetworkVideoContentService)(nil)
 var _ proto.VideoContentAdminServiceServer = (*NetworkVideoContentService)(nil)
 
+//new
+// const grpcMaxMsg = 128 * 1024 * 1024 // 128MB
+
+
 func NewNetworkVideoContentService(contentOption string) (*NetworkVideoContentService, error) {
 	nodes := parseNodeAddresses(contentOption)
 	if len(nodes) < 2 {
@@ -39,11 +43,18 @@ func NewNetworkVideoContentService(contentOption string) (*NetworkVideoContentSe
 	storageAddrs := nodes[1:]
 	clients := make(map[string]proto.VideoContentStorageClient)
 	ring := NewConsistentHashRing()
+	
+	
+	maxMsg := 128 * 1024 * 1024 // 128MB
 
 	for _, addr := range storageAddrs {
 		conn, err := grpc.Dial(
 			addr,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(maxMsg),
+				grpc.MaxCallSendMsgSize(maxMsg),
+			),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to storage node %s: %v", addr, err)
@@ -142,11 +153,23 @@ func (n *NetworkVideoContentService) AddNode(
 
 	ctxDial, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	// conn, err := grpc.DialContext(
+	// 	ctxDial,
+	// 	newAddr,
+	// 	grpc.WithTransportCredentials(insecure.NewCredentials()),
+	// 	grpc.WithBlock(),
+	// )
+	maxMsg := 128 * 1024 * 1024 // 128MB
+
 	conn, err := grpc.DialContext(
 		ctxDial,
 		newAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(maxMsg),
+			grpc.MaxCallSendMsgSize(maxMsg),
+		),
 	)
 	if err != nil {
 		n.mu.Unlock()

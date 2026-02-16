@@ -110,7 +110,13 @@ func main() {
 				return
 			}
 
-			grpcServer := grpc.NewServer()
+			// grpcServer := grpc.NewServer()
+			maxMsg := 128 * 1024 * 1024 // 128MB
+
+			grpcServer := grpc.NewServer(
+				grpc.MaxRecvMsgSize(maxMsg),
+				grpc.MaxSendMsgSize(maxMsg),
+			)
 			proto.RegisterVideoContentAdminServiceServer(grpcServer, nwService)
 			fmt.Println("Admin gRPC listening on", adminAddr)
 

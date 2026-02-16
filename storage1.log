@@ -1,0 +1,5 @@
+Starting storage.proto server...
+Host: localhost
+Port: 5001
+Base Directory: ./data/node1
+2026/02/15 17:02:00 Storage server listening on localhost:5001

@@ -148,20 +148,40 @@ func (s *server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//	run ffmpeg
+	// //	run ffmpeg
+	// cmd := exec.Command("ffmpeg",
+	// 	"-i", inputPath,
+	// 	"-map", "0",
+	// 	"-f", "dash",
+	// 	filepath.Join(outputDir, "manifest.mpd"),
+	// )
+	// cmd.Stdout = os.Stdout
+	// cmd.Stderr = os.Stderr
+	// if err := cmd.Run(); err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+// run ffmpeg (force all DASH outputs into outputDir)
 	cmd := exec.Command("ffmpeg",
 		"-i", inputPath,
 		"-map", "0",
 		"-f", "dash",
+		"-use_template", "1",
+		"-use_timeline", "1",
+		"-init_seg_name", "init-stream$RepresentationID$.m4s",
+		"-media_seg_name", "chunk-stream$RepresentationID$-$Number%05d$.m4s",
 		filepath.Join(outputDir, "manifest.mpd"),
 	)
+
+	// critical: make relative segment outputs land in outputDir (not repo root)
+	cmd.Dir = outputDir
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	// store output files
 	entries, err := os.ReadDir(outputDir)
 	if err != nil {
