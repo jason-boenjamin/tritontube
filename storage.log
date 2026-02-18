@@ -1,6 +1,0 @@
-Starting storage.proto server...
-Host: localhost
-Port: 5001
-Base Directory: ./data/node1
-2026/02/15 16:48:12 Storage server listening on localhost:5001
-exit status 1

@@ -1,6 +1,0 @@
-Starting storage.proto server...
-Host: localhost
-Port: 5002
-Base Directory: ./data/node2
-2026/02/15 17:02:00 Storage server listening on localhost:5002
-exit status 0xc000013a

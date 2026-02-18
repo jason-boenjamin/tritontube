@@ -1,6 +1,0 @@
-Unknown command: -addr
-Usage:
-  add <server_address> <node_address>     - Add a node to the cluster
-  remove <server_address> <node_address>  - Remove a node from the cluster
-  list <server_address>                   - List all nodes in the cluster
-exit status 1

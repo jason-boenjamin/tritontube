@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{.Id}} | TritonTube</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>{{.Id}}</h1>
+      <div class="meta">Uploaded at: {{.UploadedAt}}</div>
+
+      <div class="videoWrap">
+        <video id="videoPlayer" controls></video>
+      </div>
+
+      <p style="margin-top: 14px;">
+        <a href="/">Back to Home</a>
+      </p>
+      <small class="meta">If playback fails, check /content endpoints + web.log.</small>
+    </div>
+  </div>
+
+  <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+  <script>
+  (function () {
+    var url = "/content/{{.Id}}/manifest.mpd";
+    var video = document.querySelector("#videoPlayer");
+    var player = dashjs.MediaPlayer().create();
+
+    player.updateSettings({
+      debug: { logLevel: dashjs.Debug.LOG_LEVEL_DEBUG }
+    });
+
+    player.on(dashjs.MediaPlayer.events.ERROR, function(e) {
+      console.error("dash.js ERROR:", e);
+    });
+
+    player.initialize(video, url, false); // don't autoplay
+  })();
+</script>
+</body>
+</html>

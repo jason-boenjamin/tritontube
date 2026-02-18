@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TritonTube</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>TritonTube</h1>
+      <div class="meta">Upload an MP4, we convert it to MPEG-DASH, then stream it back.</div>
+
+      <h2>Upload</h2>
+      <form action="/upload" method="post" enctype="multipart/form-data" class="row">
+        <input type="file" name="file" accept="video/mp4" required />
+        <button type="submit">Upload</button>
+      </form>
+
+      <h2>Videos</h2>
+      <ul>
+        {{range .Videos}}
+          <li>
+            <a href="/videos/{{.Id}}">{{.Id}}</a>
+            <div class="meta">Uploaded: {{.UploadTime}}</div>
+          </li>
+        {{else}}
+          <li class="meta">No videos yet. Upload one above.</li>
+        {{end}}
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ============================================================
+# BUILD BINARIES (Windows-safe: no go run, no temp executables)
+# ============================================================
+echo ">>> Building binaries..."
+
+rm -rf ./bin
+mkdir -p ./bin
+
+go build -o ./bin/storage.exe ./cmd/storage
+go build -o ./bin/web.exe     ./cmd/web
+go build -o ./bin/admin.exe   ./cmd/admin
+
 # -------------------------
 # CONFIG
 # -------------------------
@@ -15,14 +27,11 @@ NODE2_HOST=localhost
 NODE2_PORT=5002
 NODE2_DIR="./data/node2"
 
-# Optional third node (enabled if NODES=3)
 NODE3_HOST=localhost
 NODE3_PORT=5003
 NODE3_DIR="./data/node3"
 
-# How many storage nodes to run: 2 (default) or 3
 NODES="${NODES:-2}"
-
 VIDEO="${VIDEO:-./samples/Everything_Goes_On.mp4}"
 
 META_DB="./metadata.db"
@@ -48,8 +57,7 @@ kill_port() {
 
 wait_http() {
   local url="$1"
-  local tries=60
-  for _ in $(seq 1 $tries); do
+  for _ in $(seq 1 60); do
     if curl -fsS "$url" >/dev/null 2>&1; then
       return 0
     fi
@@ -62,20 +70,15 @@ start_storage() {
   local port="$1"
   local dir="$2"
   local log="$3"
-  echo ">>> Starting storage node on localhost:${port} (dir: ${dir})..."
+  echo ">>> Starting storage node on localhost:${port} (dir: ${dir})"
   mkdir -p "$dir"
-  go run ./cmd/storage/main.go --port "$port" "$dir" >"$log" 2>&1 &
+  ./bin/storage.exe --port "$port" "$dir" >"$log" 2>&1 &
   sleep 0.5
 }
 
 count_files() {
   local dir="$1"
-  if [ -d "$dir" ]; then
-    # counts all files under node dir
-    find "$dir" -type f 2>/dev/null | wc -l | tr -d ' '
-  else
-    echo "0"
-  fi
+  [ -d "$dir" ] && find "$dir" -type f 2>/dev/null | wc -l | tr -d ' ' || echo "0"
 }
 
 # -------------------------
@@ -83,17 +86,14 @@ count_files() {
 # -------------------------
 echo ">>> Cleaning previous state..."
 
-# stop anything already using our ports
 kill_port "$WEB_PORT"
 kill_port "$ADMIN_PORT"
 kill_port "$NODE1_PORT"
 kill_port "$NODE2_PORT"
 kill_port "$NODE3_PORT"
 
-# wipe state
 rm -rf ./data
-rm -f "$META_DB"
-rm -f "$WEB_LOG" "$NODE1_LOG" "$NODE2_LOG" "$NODE3_LOG"
+rm -f "$META_DB" "$WEB_LOG" "$NODE1_LOG" "$NODE2_LOG" "$NODE3_LOG"
 
 # -------------------------
 # START STORAGE NODES
@@ -108,14 +108,9 @@ fi
 # -------------------------
 # START WEB SERVER
 # -------------------------
-echo ">>> Starting web server on localhost:${WEB_PORT} (admin ${ADMIN_PORT})..."
+echo ">>> Starting web server on localhost:${WEB_PORT} (admin ${ADMIN_PORT})"
 
-# IMPORTANT:
-# Your NewNetworkVideoContentService() currently expects:
-# - first entry is ADMIN address
-# - and at least ONE storage node present in the string
-# We'll pass admin + node1 here; then we register the rest via admin RPC.
-go run ./cmd/web/main.go \
+./bin/web.exe \
   -port "$WEB_PORT" \
   sqlite "$META_DB" \
   nw "localhost:${ADMIN_PORT},${NODE1_HOST}:${NODE1_PORT}" \
@@ -131,15 +126,16 @@ wait_http "http://localhost:${WEB_PORT}/" || {
 # REGISTER NODES WITH ADMIN
 # -------------------------
 echo ">>> Registering storage nodes via admin service..."
-go run ./cmd/admin/main.go add "localhost:${ADMIN_PORT}" "${NODE1_HOST}:${NODE1_PORT}" >/dev/null || true
-go run ./cmd/admin/main.go add "localhost:${ADMIN_PORT}" "${NODE2_HOST}:${NODE2_PORT}" >/dev/null
+
+./bin/admin.exe add "localhost:${ADMIN_PORT}" "${NODE1_HOST}:${NODE1_PORT}" >/dev/null || true
+./bin/admin.exe add "localhost:${ADMIN_PORT}" "${NODE2_HOST}:${NODE2_PORT}" >/dev/null
 
 if [ "$NODES" -ge 3 ]; then
-  go run ./cmd/admin/main.go add "localhost:${ADMIN_PORT}" "${NODE3_HOST}:${NODE3_PORT}" >/dev/null
+  ./bin/admin.exe add "localhost:${ADMIN_PORT}" "${NODE3_HOST}:${NODE3_PORT}" >/dev/null
 fi
 
 echo ">>> Admin list:"
-go run ./cmd/admin/main.go list "localhost:${ADMIN_PORT}"
+./bin/admin.exe list "localhost:${ADMIN_PORT}"
 
 # -------------------------
 # UPLOAD + VERIFY
@@ -161,7 +157,7 @@ curl -fsS "http://localhost:${WEB_PORT}/content/${VIDEO_ID}/chunk-stream0-00001.
 # -------------------------
 # DISTRIBUTION CHECK
 # -------------------------
-echo ">>> Distribution check (file counts per node dir):"
+echo ">>> Distribution check:"
 echo "    node1: $(count_files "$NODE1_DIR") files"
 echo "    node2: $(count_files "$NODE2_DIR") files"
 if [ "$NODES" -ge 3 ]; then
@@ -170,14 +166,3 @@ fi
 
 echo ">>> SUCCESS: pipeline verified"
 echo ">>> Open: http://localhost:${WEB_PORT}/videos/${VIDEO_ID}"
-
-# -------------------------
-# OPTIONAL SHUTDOWN
-# -------------------------
-# Uncomment if you want it to stop services after verification:
-# echo ">>> Shutting down..."
-# kill_port "$WEB_PORT"
-# kill_port "$ADMIN_PORT"
-# kill_port "$NODE1_PORT"
-# kill_port "$NODE2_PORT"
-# kill_port "$NODE3_PORT"
